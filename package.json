@@ -1,0 +1,12 @@
+{
+  "name": "song-key-finder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Find a song's key and chords, with guitar shapes, scales and dyads. Runs locally with YouTube link support.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

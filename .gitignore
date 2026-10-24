@@ -1,0 +1,24 @@
+# Claude Code's local settings (launch.json, plus settings.local.json if one is ever made)
+.claude/
+
+# Dependencies, if you add any (e.g. better-sqlite3 for saved songs)
+node_modules/
+
+# Saved results, if you add a database
+*.db
+*.db-journal
+
+# Downloaded or test audio
+*.mp3
+*.m4a
+*.wav
+*.webm
+*.flac
+*.ogg
+
+# Secrets, if you ever use a hosted database or API
+.env
+.env.*
+
+# macOS clutter
+.DS_Store
