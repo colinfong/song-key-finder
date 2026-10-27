@@ -7,6 +7,8 @@ node_modules/
 # Saved results, if you add a database
 *.db
 *.db-journal
+*.db-wal
+*.db-shm
 
 # Downloaded or test audio
 *.mp3

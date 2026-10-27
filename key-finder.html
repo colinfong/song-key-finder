@@ -198,6 +198,37 @@ section.block { display: flex; flex-direction: column; gap: 12px; }
 .chord.playing { border-color: var(--accent); background: var(--accent-soft); }
 .chord[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
+/* Saved songs */
+.lib-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.lib-count { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+#libFilter {
+  font: inherit; font-size: 0.9rem; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; width: min(260px, 100%);
+}
+#libFilter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lib-list {
+  list-style: none; margin: 0; padding: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  max-height: 300px; overflow-y: auto;
+}
+.lib-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.lib-row:first-child { border-top: 0; }
+.lib-row.current { background: var(--accent-soft); }
+.lib-open {
+  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; border-radius: 8px;
+  padding: 4px 6px; text-align: left; display: flex; flex-direction: column; gap: 1px;
+}
+.lib-open .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-open .m { font-size: 0.8rem; color: var(--muted); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-open .m b { color: var(--accent); font-weight: 600; }
+.lib-actions { display: flex; gap: 6px; flex: none; }
+.lib-actions button { padding: 4px 12px; font-size: 0.8rem; }
+.lib-actions .danger { color: #B42318; }
+.lib-actions .danger.armed { background: #B42318; border-color: #B42318; color: #FFFFFF; }
+.lib-empty { padding: 14px; color: var(--muted); font-size: 0.9rem; }
+@media (max-width: 480px) { .lib-row { flex-wrap: wrap; } .lib-actions { width: 100%; justify-content: flex-end; } }
+
 /* Chord progression */
 .loops { display: flex; flex-direction: column; gap: 10px; }
 .loop { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -359,6 +390,15 @@ section.block { display: flex; flex-direction: column; gap: 12px; }
       <button id="demo" type="button">Load demo</button>
     </div>
   </div>
+
+  <section class="library block" id="library" hidden>
+    <div class="lib-head">
+      <h3>Saved songs <span id="libCount" class="lib-count"></span></h3>
+      <input id="libFilter" type="search" placeholder="Filter by title or key" aria-label="Filter saved songs">
+    </div>
+    <p class="hint">Every song you analyse here is saved automatically. Only the results are stored, never the audio.</p>
+    <ul id="libList" class="lib-list"></ul>
+  </section>
 
   <section class="verdict" aria-live="polite">
     <div class="key-card">
@@ -1598,7 +1638,8 @@ $('scaleSec').addEventListener('keydown', e => {
 function setStatus(msg, err = false) { const s = $('status'); s.textContent = msg; s.classList.toggle('err', err); }
 const fmt = s => { const t = Math.floor(s); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 
-async function analyze(buffer, label) {
+// `source` ({type, ref}) identifies the song for the library; the demo passes none and isn't saved
+async function analyze(buffer, label, source = null) {
   stopPlayback();
   $('play').disabled = true;
   setStatus('Listening…');
@@ -1613,7 +1654,19 @@ async function analyze(buffer, label) {
   render();
   $('play').disabled = false;
   const capped = buffer.duration > MAX_SECONDS ? ` (first ${MAX_SECONDS / 60} minutes)` : '';
-  setStatus(`Analyzed ${fmt(Math.min(buffer.duration, MAX_SECONDS))} of audio${capped}.`);
+  const done = `Analyzed ${fmt(Math.min(buffer.duration, MAX_SECONDS))} of audio${capped}.`;
+  setStatus(done);
+  if (source && libraryOn) {
+    const saved = await saveToLibrary(source, label, buffer.duration);
+    setStatus(saved ? `${done} Saved to your library.` : `${done} It couldn't be saved to your library.`, !saved);
+  } else if (libraryOn) {
+    renderLibrary(); // clears the "current" highlight from the song shown before
+  }
+}
+
+async function sha256Hex(bytes) {
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function loadFile(file) {
@@ -1621,8 +1674,10 @@ async function loadFile(file) {
   setStatus(`Reading ${file.name}…`);
   try {
     const bytes = await file.arrayBuffer();
+    // Hash before decoding: decoding takes over the bytes. The hash spots the same file under another name.
+    const ref = libraryOn ? await sha256Hex(bytes) : null;
     const buffer = await new OfflineAudioContext(1, 1, SR).decodeAudioData(bytes);
-    await analyze(buffer, file.name);
+    await analyze(buffer, file.name, ref && { type: 'file', ref });
   } catch (e) {
     setStatus(`Couldn't read ${file.name}. Try an MP3, WAV, M4A or OGG file.`, true);
   }
@@ -1645,9 +1700,10 @@ async function loadYouTube(url) {
       return setStatus(msg || `Couldn't load that link (error ${res.status}).`, true);
     }
     const title = decodeURIComponent(res.headers.get('X-Title') || 'YouTube audio');
+    const videoId = res.headers.get('X-Video-Id');
     setStatus(`Decoding ${title}…`);
     const buffer = await new OfflineAudioContext(1, 1, SR).decodeAudioData(await res.arrayBuffer());
-    await analyze(buffer, title);
+    await analyze(buffer, title, videoId ? { type: 'youtube', ref: videoId } : null);
   } catch (e) {
     setStatus('Couldn\'t load that link. Check that the local server is still running.', true);
   } finally {
@@ -1655,8 +1711,139 @@ async function loadYouTube(url) {
   }
 }
 
+// ---------- Saved songs (local server only) ----------
+// Bump when a change to the analysis would give different results, so older saves can be told apart
+const ANALYSIS_VERSION = 1;
+let libraryOn = false;
+let library = [];
+
+async function saveToLibrary(source, title, duration) {
+  const body = {
+    source_type: source.type,
+    source_ref: source.ref,
+    title,
+    duration_sec: duration,
+    analysis_version: ANALYSIS_VERSION,
+    key_tonic: state.ranked[0].tonic,
+    key_mode: state.ranked[0].mode,
+    key_score: state.ranked[0].r,
+    confidence: confidence(state.ranked).level,
+    chroma: state.chroma,
+    segments: state.segs,
+    loops: state.loops.map(l => ({ pattern: l.pattern, count: l.count })),
+  };
+  try {
+    const res = await fetch('/api/songs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) return false;
+    state.savedId = (await res.json()).song_id;
+    await refreshLibrary();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function refreshLibrary() {
+  try {
+    const res = await fetch('/api/songs');
+    if (!res.ok) return;
+    library = (await res.json()).songs;
+  } catch {
+    return;
+  }
+  renderLibrary();
+}
+
+const savedDate = s => new Date(s.replace(' ', 'T') + 'Z').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
+function renderLibrary() {
+  const q = $('libFilter').value.trim().toLowerCase();
+  const rows = library.filter(s => !q || s.title.toLowerCase().includes(q) || keyName(s.key_tonic, s.key_mode).toLowerCase().includes(q));
+  $('libCount').textContent = library.length ? `${library.length}` : '';
+  const list = $('libList');
+  if (!rows.length) {
+    const li = document.createElement('li');
+    li.className = 'lib-empty';
+    li.textContent = library.length ? 'No saved songs match that filter.' : 'Nothing saved yet. Load a song file or YouTube link and it will appear here.';
+    return list.replaceChildren(li);
+  }
+  list.replaceChildren(...rows.map(s => {
+    const li = document.createElement('li');
+    li.className = 'lib-row' + (state?.savedId === s.id ? ' current' : '');
+    const open = document.createElement('button');
+    open.type = 'button'; open.className = 'lib-open';
+    open.innerHTML = '<span class="t"></span><span class="m"><b></b><span></span></span>';
+    open.querySelector('.t').textContent = s.title;
+    open.querySelector('b').textContent = keyName(s.key_tonic, s.key_mode);
+    const loop = s.main_loop ? s.main_loop.map(st => chordFor(st % 12, st >= 12, s.key_tonic, s.key_mode).numeral).join(' – ') + ' · ' : '';
+    open.querySelector('.m span').textContent = ` · ${loop}${fmt(s.duration_sec || 0)} · ${s.source_type === 'youtube' ? 'YouTube' : 'File'} · ${savedDate(s.analyzed_at)}`;
+    open.setAttribute('aria-label', `Open ${s.title}`);
+    open.addEventListener('click', () => openSaved(s.id));
+
+    const actions = document.createElement('div');
+    actions.className = 'lib-actions';
+    if (s.source_type === 'youtube') {
+      const re = document.createElement('button');
+      re.type = 'button'; re.textContent = 'Reload audio';
+      re.setAttribute('aria-label', `Load the audio for ${s.title} from YouTube again`);
+      re.addEventListener('click', () => loadYouTube(`https://www.youtube.com/watch?v=${s.source_ref}`));
+      actions.append(re);
+    }
+    // Two-step delete: the first click arms the button, the second deletes
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'danger'; del.textContent = 'Delete';
+    let armTimer = null;
+    del.addEventListener('click', async () => {
+      if (!del.classList.contains('armed')) {
+        del.classList.add('armed'); del.textContent = 'Confirm delete';
+        armTimer = setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Delete'; }, 4000);
+        return;
+      }
+      clearTimeout(armTimer);
+      const res = await fetch(`/api/songs/${s.id}`, { method: 'DELETE' }).catch(() => null);
+      if (res?.ok) {
+        if (state?.savedId === s.id) state.savedId = null;
+        setStatus(`Deleted ${s.title} from your library.`);
+        refreshLibrary();
+      } else {
+        setStatus(`Couldn't delete ${s.title}. Check that the local server is still running.`, true);
+      }
+    });
+    actions.append(del);
+    li.append(open, actions);
+    return li;
+  }));
+}
+
+async function openSaved(id) {
+  stopPlayback();
+  let s;
+  try {
+    const res = await fetch(`/api/songs/${id}`);
+    if (!res.ok) throw new Error();
+    s = await res.json();
+  } catch {
+    return setStatus('Couldn\'t open that song. Check that the local server is still running.', true);
+  }
+  // The key ranking is rebuilt from the stored note strengths rather than stored itself
+  const ranked = rankKeys(s.chroma);
+  const sel = ranked.find(k => k.tonic === s.key_tonic && k.mode === s.key_mode) || ranked[0];
+  state = { chroma: s.chroma, ranked, sel, label: `${s.title} · from your library`, buffer: null, segs: s.segments, loops: s.loops, savedId: s.id };
+  render();
+  renderLibrary();
+  $('play').disabled = true;
+  const how = s.source_type === 'youtube' ? 'press Reload audio' : 'load the file again';
+  setStatus(`Opened ${s.title} (analysed ${savedDate(s.analyzed_at)}). The audio isn't stored, so ${how} to play it.`);
+}
+
+$('libFilter').addEventListener('input', renderLibrary);
+
 if (['localhost', '127.0.0.1'].includes(location.hostname)) {
-  fetch('/api/health').then(r => r.ok && r.json()).then(j => { if (j?.ok) $('yt').hidden = false; }).catch(() => {});
+  fetch('/api/health').then(r => r.ok && r.json()).then(j => {
+    if (!j?.ok) return;
+    $('yt').hidden = false;
+    if (j.library) { libraryOn = true; $('library').hidden = false; refreshLibrary(); }
+  }).catch(() => {});
 }
 $('yt').addEventListener('submit', e => { e.preventDefault(); loadYouTube($('ytUrl').value); });
 
