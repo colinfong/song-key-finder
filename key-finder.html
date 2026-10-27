@@ -203,7 +203,7 @@ body.has-menu .wrap { padding-top: 84px; }
 .menu-btn {
   position: fixed; z-index: 30;
   top: calc(env(safe-area-inset-top, 0px) + 16px);
-  left: calc(env(safe-area-inset-left, 0px) + 16px);
+  right: calc(env(safe-area-inset-right, 0px) + 16px);
   width: 44px; height: 44px; padding: 0;
   display: grid; place-items: center;
   border-radius: 12px;
@@ -211,21 +211,21 @@ body.has-menu .wrap { padding-top: 84px; }
 }
 .menu-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
 .menu-count {
-  position: absolute; top: -6px; right: -6px;
+  position: absolute; top: -6px; left: -6px;
   min-width: 20px; height: 20px; padding: 0 5px;
   border-radius: 999px; background: var(--accent); color: var(--surface);
   font: 600 11px/20px var(--mono); text-align: center;
 }
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(10, 14, 20, 0.45); }
 .drawer {
-  position: fixed; z-index: 50; top: 0; bottom: 0; left: 0;
+  position: fixed; z-index: 50; top: 0; bottom: 0; right: 0;
   width: min(380px, 88vw);
   display: flex; flex-direction: column; gap: 12px;
-  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px) calc(env(safe-area-inset-left, 0px) + 16px);
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) calc(env(safe-area-inset-right, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 16px) 16px;
   background: var(--surface);
-  border-right: 1px solid var(--line);
-  box-shadow: 8px 0 32px rgba(10, 14, 20, 0.18);
-  transform: translateX(-105%);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 32px rgba(10, 14, 20, 0.18);
+  transform: translateX(105%);
   visibility: hidden;
   transition: transform .25s ease, visibility 0s linear .25s;
 }
