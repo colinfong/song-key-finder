@@ -198,16 +198,42 @@ section.block { display: flex; flex-direction: column; gap: 12px; }
 .chord.playing { border-color: var(--accent); background: var(--accent-soft); }
 .chord[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
+/* Site bar */
+.site-nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+/* Paints the phone's status-bar band so content doesn't scroll into view above the sticky bar */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 31; background: var(--surface); }
+.site-nav-inner {
+  max-width: 980px; margin: 0 auto;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  min-height: 64px; /* same height with or without the saved songs button */
+}
+.brand { font-family: var(--display); font-size: 1.15rem; color: var(--ink); text-decoration: none; margin-right: auto; min-height: 44px; display: flex; align-items: center; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.92rem; line-height: 1.5;
+  padding: 7px 14px; border-radius: 999px;
+}
+.nav-links a:hover { color: var(--ink); background: var(--bg); }
+.nav-links a[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.site-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .nav-links { order: 3; width: 100%; }
+  .nav-links a { flex: 1 1 0; text-align: center; }
+}
+
 /* Saved songs drawer */
-body.has-menu .wrap { padding-top: 84px; }
 .menu-btn {
-  position: fixed; z-index: 30;
-  top: calc(env(safe-area-inset-top, 0px) + 16px);
-  right: calc(env(safe-area-inset-right, 0px) + 16px);
+  position: relative; flex: none;
   width: 44px; height: 44px; padding: 0;
   display: grid; place-items: center;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(16, 24, 40, 0.10);
 }
 .menu-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
 .menu-count {
@@ -398,11 +424,22 @@ html.drawer-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
+<!-- Site bar. The page links and the saved songs button only show when the local server is running -->
+<header class="site-nav">
+  <nav class="site-nav-inner" aria-label="Main">
+    <span class="brand">Song Key Finder</span>
+    <div id="navLinks" class="nav-links" hidden>
+      <a href="/" aria-current="page">Key finder</a>
+      <a href="/how-it-works">How it works</a>
+    </div>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open saved songs" aria-expanded="false" aria-controls="library" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <span id="menuCount" class="menu-count" hidden></span>
+    </button>
+  </nav>
+</header>
+
 <!-- Saved songs drawer: only shown when the local server has a library -->
-<button id="menuBtn" class="menu-btn" type="button" aria-label="Open saved songs" aria-expanded="false" aria-controls="library" hidden>
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-  <span id="menuCount" class="menu-count" hidden></span>
-</button>
 <div id="scrim" class="scrim" hidden></div>
 <aside id="library" class="drawer" aria-label="Saved songs" inert>
   <div class="drawer-head">
@@ -1906,10 +1943,10 @@ if (['localhost', '127.0.0.1'].includes(location.hostname)) {
   fetch('/api/health').then(r => r.ok && r.json()).then(j => {
     if (!j?.ok) return;
     $('yt').hidden = false;
+    $('navLinks').hidden = false; // the second page only exists on the local server
     if (j.library) {
       libraryOn = true;
       $('menuBtn').hidden = false;
-      document.body.classList.add('has-menu');
       refreshLibrary();
     }
   }).catch(() => {});

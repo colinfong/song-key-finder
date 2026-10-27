@@ -1,0 +1,158 @@
+<title>How It Works · Song Key Finder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Same tokens and site bar as key-finder.html; keep the two in step when changing either */
+:root {
+  --bg: #F2F4F7;
+  --surface: #FFFFFF;
+  --ink: #18202A;
+  --muted: #5D6977;
+  --line: #DCE1E8;
+  --accent: #3446C4;
+  --accent-soft: #E3E7FB;
+  --rel: #0F7F72;
+  --rel-soft: #DDF2EE;
+  --display: 'Young Serif', Georgia, 'Times New Roman', serif;
+  --body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E131A; --surface: #161D27; --ink: #E5EAF0; --muted: #94A1B0; --line: #273141;
+    --accent: #8F9CFF; --accent-soft: #232B55; --rel: #4CC9B7; --rel-soft: #16332F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E131A; --surface: #161D27; --ink: #E5EAF0; --muted: #94A1B0; --line: #273141;
+  --accent: #8F9CFF; --accent-soft: #232B55; --rel: #4CC9B7; --rel-soft: #16332F;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+h1, h2 { margin: 0; font-weight: 400; text-wrap: balance; }
+p, ol, ul { margin: 0; }
+
+/* Site bar */
+.site-nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 31; background: var(--surface); }
+.site-nav-inner {
+  max-width: 980px; margin: 0 auto;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  min-height: 64px;
+}
+.brand { font-family: var(--display); font-size: 1.15rem; color: var(--ink); text-decoration: none; margin-right: auto; min-height: 44px; display: flex; align-items: center; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.92rem; line-height: 1.5;
+  padding: 7px 14px; border-radius: 999px;
+}
+.nav-links a:hover { color: var(--ink); background: var(--bg); }
+.nav-links a[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.site-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .nav-links { order: 3; width: 100%; }
+  .nav-links a { flex: 1 1 0; text-align: center; }
+}
+
+/* Article */
+.wrap {
+  max-width: 720px; margin: 0 auto;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px;
+}
+.eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1; margin-top: 6px; }
+.lede { color: var(--muted); margin-top: 12px; font-size: 1.05rem; }
+section { display: flex; flex-direction: column; gap: 12px; }
+h2 { font-family: var(--display); font-size: 1.45rem; }
+section p, section li { max-width: 65ch; }
+ol.steps { padding: 0; list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 10px; }
+ol.steps li {
+  counter-increment: step;
+  display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+}
+ol.steps li::before {
+  content: counter(step);
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent);
+  font-family: var(--mono); font-size: 0.8rem; font-weight: 600;
+}
+ol.steps strong { display: block; }
+ul.plain { padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.note {
+  background: var(--rel-soft); color: var(--ink);
+  border-radius: 12px; padding: 14px 16px;
+}
+.note strong { color: var(--rel); }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+.cta { display: inline-block; align-self: flex-start; color: var(--surface); background: var(--accent); text-decoration: none; font-weight: 600; padding: 10px 20px; border-radius: 999px; }
+.cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+
+<header class="site-nav">
+  <nav class="site-nav-inner" aria-label="Main">
+    <a class="brand" href="/">Song Key Finder</a>
+    <div class="nav-links">
+      <a href="/">Key finder</a>
+      <a href="/how-it-works" aria-current="page">How it works</a>
+    </div>
+  </nav>
+</header>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">How it works</p>
+    <h1>From a song to its key, chords and shapes</h1>
+    <p class="lede">What the key finder does with your song, step by step, and where its answers can go wrong.</p>
+  </header>
+
+  <section>
+    <h2>What happens to your song</h2>
+    <ol class="steps">
+      <li><div><strong>The audio is decoded in your browser.</strong> An uploaded file never leaves your computer. A YouTube link goes to the server on your own machine, which downloads only the audio, passes it to the page and deletes it.</div></li>
+      <li><div><strong>The page measures the 12 notes.</strong> About five times a second it looks at a short slice of sound, splits it into frequencies, and adds each one to the nearest note, C through B, ignoring which octave it was in.</div></li>
+      <li><div><strong>The key is matched.</strong> The song's overall note strengths are compared with reference profiles for all 24 major and minor keys. The closest match is the key, and the next few appear as alternatives.</div></li>
+      <li><div><strong>The chords are traced.</strong> Each moment is compared with all 24 major and minor chords. The result is smoothed so the chord only changes when the new one clearly holds, and repeated stretches become the song's progressions.</div></li>
+      <li><div><strong>The results are saved.</strong> On the local version, the key, note strengths, chord chart and progressions are stored in a database file on your computer. The audio is not.</div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>The guitar tools</h2>
+    <p>Chord shapes, scales and dyads are worked out from music theory rather than looked up, so they exist for every chord in every key.</p>
+    <ul class="plain">
+      <li><strong>Chord shapes</strong> include every way to play the chord within a four-fret stretch in standard tuning, using at most four fingers, with a barre counted as one.</li>
+      <li><strong>Scales</strong> start on the root of the chord you pick. By default they use the key's own notes, so in C major a D minor chord gives D Dorian.</li>
+      <li><strong>Dyads</strong> are two-note shapes from that scale on one pair of strings, in 3rds, 6ths or other intervals.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where it can go wrong</h2>
+    <ul class="plain">
+      <li>A major key and its relative minor share the same notes, so they often score close together. If the song feels sad, check the minor option.</li>
+      <li>Songs that change key, are mostly drums, or are tuned well away from A = 440 Hz give weaker results.</li>
+      <li>Every chord is reported as a plain major or minor chord. Sevenths show as their basic chord, and diminished or suspended chords appear as the nearest major or minor.</li>
+      <li>Chords shorter than about half a second are merged into their neighbours.</li>
+    </ul>
+    <p class="note"><strong>Treat the chord chart as a starting point.</strong> It's an estimate from the audio, so check it by ear before relying on it.</p>
+  </section>
+
+  <a class="cta" href="/">Analyse a song</a>
+</main>

@@ -8,7 +8,13 @@ const { spawn } = require('child_process');
 
 const PORT = Number(process.env.PORT) || 8765;
 const HOST = '127.0.0.1'; // only reachable from this computer
-const PAGE = path.join(__dirname, 'key-finder.html');
+// URL path → page file
+const PAGES = {
+  '/': 'key-finder.html',
+  '/index.html': 'key-finder.html',
+  '/how-it-works': 'how-it-works.html',
+  '/how-it-works.html': 'how-it-works.html',
+};
 const MAX_SECONDS = 20 * 60;
 const MAX_BYTES = 80 * 1024 * 1024;
 const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be']);
@@ -23,8 +29,8 @@ try {
 }
 
 // The publish step wraps the page in a document skeleton; locally we add it ourselves
-function pageHtml() {
-  const body = fs.readFileSync(PAGE, 'utf8');
+function pageHtml(file) {
+  const body = fs.readFileSync(path.join(__dirname, file), 'utf8');
   return '<!doctype html><html><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
@@ -193,9 +199,9 @@ async function handleSongs(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   try {
-    if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
+    if (req.method === 'GET' && Object.hasOwn(PAGES, pathname)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end(pageHtml());
+      return res.end(pageHtml(PAGES[pathname]));
     }
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, { ok: true, library: !!db });

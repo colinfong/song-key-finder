@@ -58,7 +58,8 @@ If `npm install` hasn't been run, the app still works, just without saving.
 
 ## Files
 
-- `key-finder.html`: the whole app (page, audio analysis, music theory). The same file is published as a claude.ai artifact, where the YouTube box and Saved songs stay hidden.
+- `key-finder.html`: the whole app (page, audio analysis, music theory), served at `/`. The same file is published as a claude.ai artifact, where the YouTube box, Saved songs and page links stay hidden.
+- `how-it-works.html`: a second page explaining the analysis, served at `/how-it-works`. Both pages share the top bar; its styles are copied in each file, so keep them in step.
 - `server.js`: serves the page and the YouTube and saved-songs endpoints.
 - `db.js`: the SQLite database and its queries.
 - `migrations/`: the database schema, one numbered file per change.
