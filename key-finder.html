@@ -198,36 +198,72 @@ section.block { display: flex; flex-direction: column; gap: 12px; }
 .chord.playing { border-color: var(--accent); background: var(--accent-soft); }
 .chord[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
-/* Saved songs */
-.lib-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+/* Saved songs drawer */
+body.has-menu .wrap { padding-top: 84px; }
+.menu-btn {
+  position: fixed; z-index: 30;
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
+  left: calc(env(safe-area-inset-left, 0px) + 16px);
+  width: 44px; height: 44px; padding: 0;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(16, 24, 40, 0.10);
+}
+.menu-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.menu-count {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 999px; background: var(--accent); color: var(--surface);
+  font: 600 11px/20px var(--mono); text-align: center;
+}
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(10, 14, 20, 0.45); }
+.drawer {
+  position: fixed; z-index: 50; top: 0; bottom: 0; left: 0;
+  width: min(380px, 88vw);
+  display: flex; flex-direction: column; gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px) calc(env(safe-area-inset-left, 0px) + 16px);
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  box-shadow: 8px 0 32px rgba(10, 14, 20, 0.18);
+  transform: translateX(-105%);
+  visibility: hidden;
+  transition: transform .25s ease, visibility 0s linear .25s;
+}
+.drawer.open { transform: none; visibility: visible; transition: transform .25s ease; }
+html.drawer-open { overflow: hidden; }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.icon-btn { width: 36px; height: 36px; padding: 0; font-size: 1.4rem; line-height: 1; border-radius: 10px; flex: none; }
 .lib-count { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
 #libFilter {
-  font: inherit; font-size: 0.9rem; color: var(--ink);
-  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
-  padding: 6px 14px; width: min(260px, 100%);
+  width: 100%;
+  font: inherit; font-size: 0.95rem; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+  padding: 9px 16px;
 }
 #libFilter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drawer-hint { font-size: 0.8rem; color: var(--muted); }
 .lib-list {
+  flex: 1 1 auto; min-height: 0;
   list-style: none; margin: 0; padding: 0;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-  max-height: 300px; overflow-y: auto;
+  border-top: 1px solid var(--line);
+  overflow-y: auto; overscroll-behavior: contain;
 }
-.lib-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line); }
-.lib-row:first-child { border-top: 0; }
-.lib-row.current { background: var(--accent-soft); }
+.lib-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.lib-row.current { background: var(--accent-soft); border-radius: 10px; }
 .lib-open {
-  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; border-radius: 8px;
-  padding: 4px 6px; text-align: left; display: flex; flex-direction: column; gap: 1px;
+  min-width: 0; border: 0; background: transparent; border-radius: 8px;
+  padding: 4px 6px; text-align: left; display: flex; flex-direction: column; gap: 2px;
 }
 .lib-open .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-open .m { font-size: 0.8rem; color: var(--muted); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-open .m b { color: var(--accent); font-weight: 600; }
-.lib-actions { display: flex; gap: 6px; flex: none; }
-.lib-actions button { padding: 4px 12px; font-size: 0.8rem; }
+.lib-actions { display: flex; justify-content: flex-end; gap: 6px; padding-right: 6px; }
+.lib-actions button { padding: 3px 12px; font-size: 0.78rem; }
 .lib-actions .danger { color: #B42318; }
 .lib-actions .danger.armed { background: #B42318; border-color: #B42318; color: #FFFFFF; }
-.lib-empty { padding: 14px; color: var(--muted); font-size: 0.9rem; }
-@media (max-width: 480px) { .lib-row { flex-wrap: wrap; } .lib-actions { width: 100%; justify-content: flex-end; } }
+.lib-empty { padding: 14px 6px; color: var(--muted); font-size: 0.9rem; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lib-actions .danger:not(.armed) { color: #F97066; } }
+:root[data-theme="dark"] .lib-actions .danger:not(.armed) { color: #F97066; }
 
 /* Chord progression */
 .loops { display: flex; flex-direction: column; gap: 10px; }
@@ -362,6 +398,22 @@ section.block { display: flex; flex-direction: column; gap: 12px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
+<!-- Saved songs drawer: only shown when the local server has a library -->
+<button id="menuBtn" class="menu-btn" type="button" aria-label="Open saved songs" aria-expanded="false" aria-controls="library" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  <span id="menuCount" class="menu-count" hidden></span>
+</button>
+<div id="scrim" class="scrim" hidden></div>
+<aside id="library" class="drawer" aria-label="Saved songs" inert>
+  <div class="drawer-head">
+    <h3>Saved songs <span id="libCount" class="lib-count"></span></h3>
+    <button id="menuClose" class="icon-btn" type="button" aria-label="Close saved songs">×</button>
+  </div>
+  <input id="libFilter" type="search" placeholder="Search by title or key" aria-label="Search saved songs" autocomplete="off">
+  <p class="drawer-hint">Every song you analyse is saved here automatically. Only the results are stored, never the audio.</p>
+  <ul id="libList" class="lib-list"></ul>
+</aside>
+
 <main class="wrap">
   <header class="top">
     <p class="eyebrow">Key &amp; chord finder</p>
@@ -390,15 +442,6 @@ section.block { display: flex; flex-direction: column; gap: 12px; }
       <button id="demo" type="button">Load demo</button>
     </div>
   </div>
-
-  <section class="library block" id="library" hidden>
-    <div class="lib-head">
-      <h3>Saved songs <span id="libCount" class="lib-count"></span></h3>
-      <input id="libFilter" type="search" placeholder="Filter by title or key" aria-label="Filter saved songs">
-    </div>
-    <p class="hint">Every song you analyse here is saved automatically. Only the results are stored, never the audio.</p>
-    <ul id="libList" class="lib-list"></ul>
-  </section>
 
   <section class="verdict" aria-live="polite">
     <div class="key-card">
@@ -1760,11 +1803,13 @@ function renderLibrary() {
   const q = $('libFilter').value.trim().toLowerCase();
   const rows = library.filter(s => !q || s.title.toLowerCase().includes(q) || keyName(s.key_tonic, s.key_mode).toLowerCase().includes(q));
   $('libCount').textContent = library.length ? `${library.length}` : '';
+  $('menuCount').textContent = library.length;
+  $('menuCount').hidden = !library.length;
   const list = $('libList');
   if (!rows.length) {
     const li = document.createElement('li');
     li.className = 'lib-empty';
-    li.textContent = library.length ? 'No saved songs match that filter.' : 'Nothing saved yet. Load a song file or YouTube link and it will appear here.';
+    li.textContent = library.length ? 'No saved songs match that search.' : 'Nothing saved yet. Load a song file or YouTube link and it will appear here.';
     return list.replaceChildren(li);
   }
   list.replaceChildren(...rows.map(s => {
@@ -1831,6 +1876,7 @@ async function openSaved(id) {
   state = { chroma: s.chroma, ranked, sel, label: `${s.title} · from your library`, buffer: null, segs: s.segments, loops: s.loops, savedId: s.id };
   render();
   renderLibrary();
+  setDrawer(false);
   $('play').disabled = true;
   const how = s.source_type === 'youtube' ? 'press Reload audio' : 'load the file again';
   setStatus(`Opened ${s.title} (analysed ${savedDate(s.analyzed_at)}). The audio isn't stored, so ${how} to play it.`);
@@ -1838,11 +1884,34 @@ async function openSaved(id) {
 
 $('libFilter').addEventListener('input', renderLibrary);
 
+// The drawer stays in the page but is off-screen and unfocusable (inert) while closed
+function setDrawer(open) {
+  const drawer = $('library');
+  if (drawer.classList.contains('open') === open) return;
+  drawer.classList.toggle('open', open);
+  drawer.inert = !open;
+  $('scrim').hidden = !open;
+  $('menuBtn').setAttribute('aria-expanded', String(open));
+  $('menuBtn').setAttribute('aria-label', open ? 'Close saved songs' : 'Open saved songs');
+  document.documentElement.classList.toggle('drawer-open', open);
+  if (open) setTimeout(() => $('libFilter').focus(), 60);
+  else if (drawer.contains(document.activeElement) || document.activeElement === document.body) $('menuBtn').focus();
+}
+$('menuBtn').addEventListener('click', () => setDrawer(!$('library').classList.contains('open')));
+$('menuClose').addEventListener('click', () => setDrawer(false));
+$('scrim').addEventListener('click', () => setDrawer(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('library').classList.contains('open')) setDrawer(false); });
+
 if (['localhost', '127.0.0.1'].includes(location.hostname)) {
   fetch('/api/health').then(r => r.ok && r.json()).then(j => {
     if (!j?.ok) return;
     $('yt').hidden = false;
-    if (j.library) { libraryOn = true; $('library').hidden = false; refreshLibrary(); }
+    if (j.library) {
+      libraryOn = true;
+      $('menuBtn').hidden = false;
+      document.body.classList.add('has-menu');
+      refreshLibrary();
+    }
   }).catch(() => {});
 }
 $('yt').addEventListener('submit', e => { e.preventDefault(); loadYouTube($('ytUrl').value); });
