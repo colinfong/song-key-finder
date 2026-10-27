@@ -6,6 +6,18 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
+// Reads KEY=value lines from .env (kept out of Git) without overriding variables already set
+function loadEnv(file) {
+  if (!fs.existsSync(file)) return;
+  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+    if (!m) continue;
+    const value = m[2].replace(/^(['"])(.*)\1$/, '$2');
+    if (process.env[m[1]] === undefined) process.env[m[1]] = value;
+  }
+}
+loadEnv(path.join(__dirname, '.env'));
+
 const PORT = Number(process.env.PORT) || 8765;
 const HOST = '127.0.0.1'; // only reachable from this computer
 // URL path → page file
@@ -26,6 +38,17 @@ try {
   db = require('./db').openDb(DB_PATH);
 } catch (e) {
   console.warn(`Saved songs are off (${e.code === 'MODULE_NOT_FOUND' ? 'run "npm install" to enable them' : e.message}).`);
+}
+const spotify = require('./spotify').createSpotify({ db, port: PORT });
+
+// Only this computer's own pages may use the server. Checking the Host header blocks DNS-rebinding
+// tricks, and checking Origin stops other websites in your browser from triggering changes.
+const OUR_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
+const OUR_ORIGINS = new Set([...OUR_HOSTS].map(h => `http://${h}`));
+function fromThisComputer(req) {
+  if (!OUR_HOSTS.has(req.headers.host)) return false;
+  const origin = req.headers.origin;
+  return req.method === 'GET' || !origin || OUR_ORIGINS.has(origin);
 }
 
 // The publish step wraps the page in a document skeleton; locally we add it ourselves
@@ -197,8 +220,11 @@ async function handleSongs(req, res, pathname) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  if (!fromThisComputer(req)) return sendJson(res, 403, { error: 'Requests are only accepted from this computer\'s own pages.' });
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname } = url;
   try {
+    if (await spotify.handle(req, res, pathname, url, sendJson)) return;
     if (req.method === 'GET' && Object.hasOwn(PAGES, pathname)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(pageHtml(PAGES[pathname]));

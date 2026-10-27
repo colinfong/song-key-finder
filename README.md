@@ -47,6 +47,26 @@ Every file or YouTube link you analyse is saved automatically to `songs.db`, a S
 
 If `npm install` hasn't been run, the app still works, just without saving.
 
+## Spotify import
+
+The **How it works** page can log in to your Spotify account and import every playlist you own or collaborate on, plus your Liked Songs, into the same database.
+
+- **Only song information is imported:** title, artist, album, length and playlist order. Spotify doesn't allow audio downloads.
+- **Labels:** every song has an `origin`. `key_detection` means it was analysed by the key finder; `spotify_import` means it came from Spotify. The database rejects a song whose label doesn't match its source, and Spotify songs don't appear in the Saved songs drawer.
+- **Playlists you only follow** (including Spotify's own) are listed as skipped, because Spotify only shares the songs in playlists you own or collaborate on.
+- **Importing again** updates each playlist to match Spotify, without duplicating songs. A song in several playlists is stored once.
+- **Login** uses Spotify's PKCE flow, so no client secret is needed. Tokens stay in the server's memory and never reach the page; log in again after restarting the server.
+
+To set it up once:
+
+1. Create an app at https://developer.spotify.com/dashboard.
+2. Add the Redirect URI `http://127.0.0.1:8765/auth/spotify/callback`, using your port if you run on another one. Spotify doesn't accept `localhost` here.
+3. Tick **Web API**, save, and copy the Client ID.
+4. Copy `.env.example` to `.env` and paste the Client ID after `SPOTIFY_CLIENT_ID=`. `.env` is ignored by Git.
+5. Restart the server, open the How it works page, and press **Log in with Spotify**.
+
+Spotify apps start in development mode, which only lets accounts you add under the app's **User Management** log in.
+
 ### API
 
 | Method | Path | Does |
@@ -55,6 +75,14 @@ If `npm install` hasn't been run, the app still works, just without saving.
 | `POST` | `/api/songs` | Saves a song and its analysis (validated before saving) |
 | `GET` | `/api/songs/:id` | Returns one song with its full analysis |
 | `DELETE` | `/api/songs/:id` | Deletes a song and its analyses |
+| `GET` | `/auth/spotify/login` | Starts the Spotify login |
+| `GET` | `/api/spotify/status` | Login state, import progress and song counts by label |
+| `POST` | `/api/spotify/import` | Imports all playlists and Liked Songs |
+| `POST` | `/api/spotify/logout` | Forgets the Spotify login (imported songs stay) |
+| `GET` | `/api/spotify/playlists` | Lists imported playlists |
+| `GET` | `/api/spotify/playlists/:id/songs` | Lists one playlist's songs in order |
+
+The server only accepts requests from its own pages: other hosts and other websites' pages are refused.
 
 ## Files
 
@@ -62,4 +90,6 @@ If `npm install` hasn't been run, the app still works, just without saving.
 - `how-it-works.html`: a second page explaining the analysis, served at `/how-it-works`. Both pages share the top bar; its styles are copied in each file, so keep them in step.
 - `server.js`: serves the page and the YouTube and saved-songs endpoints.
 - `db.js`: the SQLite database and its queries.
+- `spotify.js`: Spotify login and playlist import.
+- `.env.example`: a template for `.env`, which holds your Spotify Client ID.
 - `migrations/`: the database schema, one numbered file per change.

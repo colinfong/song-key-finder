@@ -101,6 +101,67 @@ ul.plain { padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px;
 }
 .note strong { color: var(--rel); }
 code { font-family: var(--mono); font-size: 0.88em; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+/* Spotify library */
+.spotify { scroll-margin-top: 120px; }
+.sp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.label {
+  font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+}
+.label-spotify { background: var(--rel-soft); color: var(--rel); }
+.label-detected { background: var(--accent-soft); color: var(--accent); }
+.muted { color: var(--muted); }
+.sp-panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.sp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.sp-user { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+.btn {
+  font: inherit; font-size: 0.92rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { color: var(--surface); background: var(--accent); border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sp-steps { padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.copy-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.copy-row code { min-width: 0; overflow-wrap: anywhere; }
+.sp-progress { display: flex; flex-direction: column; gap: 6px; }
+.sp-progress progress { width: 100%; height: 10px; accent-color: var(--accent); }
+.sp-progress span { font-size: 0.88rem; color: var(--muted); }
+.sp-message { border-radius: 12px; padding: 12px 14px; background: var(--accent-soft); }
+.sp-message.err { background: #FDE8E7; color: #8F1D14; }
+:root[data-theme="dark"] .sp-message.err { background: #3A1917; color: #F9A39C; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sp-message.err { background: #3A1917; color: #F9A39C; } }
+.sp-skipped { font-size: 0.88rem; color: var(--muted); }
+.sp-skipped summary { cursor: pointer; }
+.sp-skipped ul { margin-top: 6px; padding-left: 1.2em; }
+.sp-library { display: flex; flex-direction: column; gap: 12px; }
+.sp-counts { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.92rem; }
+.sp-counts span { display: inline-flex; align-items: center; gap: 8px; }
+.sp-playlists { display: flex; flex-direction: column; gap: 8px; }
+.pl { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.pl summary {
+  list-style: none; cursor: pointer; padding: 12px 14px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.pl summary::-webkit-details-marker { display: none; }
+.pl summary::before { content: "▸"; color: var(--muted); }
+.pl[open] summary::before { content: "▾"; }
+.pl summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
+.pl-name { font-weight: 600; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.pl-meta { font-size: 0.82rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pl-songs { overflow-x: auto; border-top: 1px solid var(--line); }
+.pl-songs table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.pl-songs th, .pl-songs td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pl-songs th { font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.pl-songs td.num { color: var(--muted); font-variant-numeric: tabular-nums; width: 1%; }
+.pl-songs td.len { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted); }
+.pl-songs tr:last-child td { border-bottom: 0; }
+.pl-songs .sub { display: block; color: var(--muted); font-size: 0.8rem; }
+
 .cta { display: inline-block; align-self: flex-start; color: var(--surface); background: var(--accent); text-decoration: none; font-weight: 600; padding: 10px 20px; border-radius: 999px; }
 .cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 </style>
@@ -121,6 +182,20 @@ code { font-family: var(--mono); font-size: 0.88em; background: var(--surface); 
     <h1>From a song to its key, chords and shapes</h1>
     <p class="lede">What the key finder does with your song, step by step, and where its answers can go wrong.</p>
   </header>
+
+  <section id="spotify" class="spotify" aria-labelledby="spTitle">
+    <div class="sp-head">
+      <h2 id="spTitle">Your Spotify library</h2>
+      <span class="label label-spotify">Spotify import</span>
+    </div>
+    <p>Import the songs from your Spotify playlists and Liked Songs into your saved songs database. Spotify doesn't allow audio downloads, so each song's title, artist, album and length are saved. These songs are labelled <strong>Spotify import</strong>, separate from songs labelled <strong>Key detected</strong> by the key finder.</p>
+    <div id="spPanel" class="sp-panel"><p class="muted">Checking your Spotify connection…</p></div>
+    <p id="spMessage" class="sp-message" role="status" hidden></p>
+    <div id="spLibrary" class="sp-library" hidden>
+      <div class="sp-counts" id="spCounts"></div>
+      <div id="spPlaylists" class="sp-playlists"></div>
+    </div>
+  </section>
 
   <section>
     <h2>What happens to your song</h2>
@@ -156,3 +231,194 @@ code { font-family: var(--mono); font-size: 0.88em; background: var(--surface); 
 
   <a class="cta" href="/">Analyse a song</a>
 </main>
+
+<script>
+// Spotify library: talks to the local server, which holds the Spotify login and does the import
+const $ = id => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  e.append(...kids.filter(k => k != null));
+  return e;
+};
+const fmtLen = s => { if (!Number.isFinite(s)) return ''; const t = Math.round(s); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+const fmtDate = s => new Date(s.includes('T') ? s : s.replace(' ', 'T') + 'Z').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+const plural = (n, one, many = one + 's') => `${n.toLocaleString()} ${n === 1 ? one : many}`;
+
+let polling = null;
+let wasRunning = false;
+
+function showMessage(text, isError = false) {
+  const m = $('spMessage');
+  m.hidden = !text;
+  m.textContent = text || '';
+  m.classList.toggle('err', isError);
+}
+
+async function getJson(url, opts) {
+  const r = await fetch(url, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `Request failed (${r.status})`);
+  return j;
+}
+
+function setupSteps(redirectUri) {
+  const copy = el('button', { class: 'btn', type: 'button', onclick: async e => {
+    try { await navigator.clipboard.writeText(redirectUri); e.target.textContent = 'Copied'; }
+    catch { getSelection().selectAllChildren(code); }
+  } }, 'Copy');
+  const code = el('code', {}, redirectUri);
+  return [
+    el('p', {}, 'To connect Spotify, this app needs its own Client ID from Spotify. It takes a few minutes, once:'),
+    el('ol', { class: 'sp-steps' },
+      el('li', {}, 'Go to developer.spotify.com/dashboard, log in, and create an app.'),
+      el('li', {}, 'Add this Redirect URI to the app exactly:', el('div', { class: 'copy-row' }, code, copy)),
+      el('li', {}, 'Tick Web API, save, and copy the app\'s Client ID.'),
+      el('li', {}, 'In the project folder, copy .env.example to .env and paste the Client ID after SPOTIFY_CLIENT_ID=.'),
+      el('li', {}, 'Restart the server and reload this page.'),
+    ),
+  ];
+}
+
+function renderPanel(s) {
+  const panel = $('spPanel');
+  if (!s.library) {
+    panel.replaceChildren(el('p', {}, 'Saving is off. Run "npm install" in the project folder, then restart the server.'));
+    return;
+  }
+  if (!s.configured) { panel.replaceChildren(...setupSteps(s.redirectUri)); return; }
+  if (!s.connected) {
+    panel.replaceChildren(
+      el('p', {}, 'Log in to let this app read your playlists and Liked Songs. It can\'t change anything in your Spotify account.'),
+      el('div', { class: 'sp-row' }, el('a', { class: 'btn primary', href: '/auth/spotify/login' }, 'Log in with Spotify')),
+    );
+    return;
+  }
+  const job = s.import;
+  const running = !!job?.running;
+  const rows = [
+    el('div', { class: 'sp-row' },
+      el('span', { class: 'sp-user' }, `Logged in as ${s.user}`),
+      el('button', { class: 'btn primary', type: 'button', disabled: running ? '' : null, onclick: startImport },
+        running ? 'Importing…' : (s.counts.spotify_import ? 'Import again' : 'Import playlists')),
+      el('button', { class: 'btn', type: 'button', disabled: running ? '' : null, onclick: logout }, 'Log out'),
+    ),
+  ];
+  if (running) {
+    const prog = el('progress', { max: String(Math.max(1, job.total)), value: String(job.done) });
+    if (!job.total) prog.removeAttribute('value'); // still finding playlists: show an indeterminate bar
+    rows.push(el('div', { class: 'sp-progress' }, prog,
+      el('span', {}, job.total ? `Playlist ${Math.min(job.done + 1, job.total)} of ${job.total}: ${job.current}` : `${job.current}…`)));
+  } else if (job?.finishedAt) {
+    const r = job.result;
+    rows.push(el('p', { class: 'muted' },
+      `Last import ${fmtDate(job.finishedAt)}: ${plural(r.playlists, 'playlist')} imported${r.skipped.length ? `, ${r.skipped.length} skipped` : ''}.`));
+    if (r.skipped.length) {
+      rows.push(el('details', { class: 'sp-skipped' },
+        el('summary', {}, `${plural(r.skipped.length, 'playlist')} couldn't be imported`),
+        el('ul', {}, ...r.skipped.map(x => el('li', {}, `${x.name}: ${x.reason}`)))));
+    }
+  }
+  panel.replaceChildren(...rows);
+}
+
+async function refresh() {
+  let s;
+  try { s = await getJson('/api/spotify/status'); }
+  catch {
+    $('spPanel').replaceChildren(el('p', {}, 'Spotify import needs the local server. Start it with "npm start" and open this page from it.'));
+    return null;
+  }
+  renderPanel(s);
+  // While an import runs, check on it every 0.8 s; when it finishes, report and show the playlists
+  const running = !!s.import?.running;
+  if (running && !polling) polling = setInterval(refresh, 800);
+  if (!running && polling) { clearInterval(polling); polling = null; }
+  if (wasRunning && !running) {
+    const job = s.import;
+    if (job.error) showMessage(job.error, true);
+    else showMessage(`Imported ${plural(job.result.playlists, 'playlist')}. Your library now has ${plural(s.counts.spotify_import || 0, 'song')} from Spotify.`);
+    await loadPlaylists();
+  }
+  wasRunning = running;
+  return s;
+}
+
+async function startImport() {
+  showMessage('');
+  try { await getJson('/api/spotify/import', { method: 'POST' }); }
+  catch (e) { showMessage(e.message, true); }
+  refresh();
+}
+
+async function logout() {
+  await fetch('/api/spotify/logout', { method: 'POST' }).catch(() => {});
+  showMessage('Logged out of Spotify. Your imported songs are still saved.');
+  refresh();
+}
+
+async function loadPlaylists() {
+  let data, counts;
+  try {
+    [data, { counts }] = await Promise.all([getJson('/api/spotify/playlists'), getJson('/api/spotify/status')]);
+  } catch { return; }
+  const lib = $('spLibrary');
+  lib.hidden = !data.playlists.length;
+  if (!data.playlists.length) return;
+  $('spCounts').replaceChildren(
+    el('span', {}, el('span', { class: 'label label-spotify' }, 'Spotify import'), plural(counts.spotify_import || 0, 'song')),
+    el('span', {}, el('span', { class: 'label label-detected' }, 'Key detected'), plural(counts.key_detection || 0, 'song')),
+  );
+  $('spPlaylists').replaceChildren(...data.playlists.map(p => {
+    const box = el('div', { class: 'pl-songs' });
+    const d = el('details', { class: 'pl' },
+      el('summary', {}, el('span', { class: 'pl-name' }, p.name),
+        el('span', { class: 'pl-meta' }, `${plural(p.track_count, 'song')} · ${fmtDate(p.imported_at)}`)),
+      box);
+    d.addEventListener('toggle', async () => {
+      if (!d.open || box.dataset.loaded) return;
+      box.dataset.loaded = '1';
+      box.replaceChildren(el('p', { class: 'muted', style: 'padding: 10px 14px' }, 'Loading…'));
+      try {
+        const { songs } = await getJson(`/api/spotify/playlists/${p.id}/songs`);
+        box.replaceChildren(songs.length
+          ? el('table', {},
+              el('thead', {}, el('tr', {}, el('th', {}, '#'), el('th', {}, 'Song'), el('th', {}, 'Album'), el('th', {}, 'Length'))),
+              el('tbody', {}, ...songs.map(s => el('tr', {},
+                el('td', { class: 'num' }, String(s.position + 1)),
+                el('td', {}, s.title, el('span', { class: 'sub' }, s.artist || 'Unknown artist')),
+                el('td', {}, s.album || ''),
+                el('td', { class: 'len' }, fmtLen(s.duration_sec))))))
+          : el('p', { class: 'muted', style: 'padding: 10px 14px' }, 'This playlist is empty.'));
+      } catch (e) {
+        delete box.dataset.loaded;
+        box.replaceChildren(el('p', { class: 'muted', style: 'padding: 10px 14px' }, `Couldn't load the songs: ${e.message}`));
+      }
+    });
+    return d;
+  }));
+}
+
+// Outcome of a sign-in, passed back in the address after Spotify returns here
+const OUTCOMES = {
+  connected: ['Logged in to Spotify. Press Import playlists to bring your songs in.', false],
+  denied: ['Spotify login was cancelled.', true],
+  expired: ['That login link expired. Press Log in with Spotify again.', true],
+  failed: ['Spotify login didn\'t complete. Check the Client ID and Redirect URI, then try again.', true],
+  not_configured: ['Add your Spotify Client ID first, using the steps below.', true],
+};
+const outcome = new URLSearchParams(location.search).get('spotify');
+if (OUTCOMES[outcome]) {
+  showMessage(...OUTCOMES[outcome]);
+  history.replaceState(null, '', location.pathname + location.hash);
+}
+
+(async () => {
+  const s = await refresh();
+  if (s?.counts?.spotify_import) await loadPlaylists();
+  if (location.hash === '#spotify') $('spotify').scrollIntoView();
+})();
+</script>

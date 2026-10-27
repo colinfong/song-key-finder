@@ -21,6 +21,7 @@ node_modules/
 # Secrets, if you ever use a hosted database or API
 .env
 .env.*
+!.env.example
 
 # macOS clutter
 .DS_Store
