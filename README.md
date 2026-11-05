@@ -2,7 +2,39 @@
 
 Finds a song's key and chord progression from its audio and lists the chords in that key. It also shows every guitar shape for each chord, plus the matching scale and its dyads across the neck.
 
-All the analysis runs in the browser. The local server adds two things: loading songs from YouTube links, and a library that saves every song you analyse.
+All the analysis runs in the browser. The local server adds three things: loading songs from YouTube links, a library that saves every song you analyse, and importing your Spotify playlists.
+
+## What it does
+
+Load an audio file or paste a YouTube link, and the app:
+
+- **Detects the key**, with a confidence level and the runner-up keys. You can pick a different key if you disagree, and the rest of the page follows.
+- **Lists the chords in the key**, with Roman numerals, plus common borrowed chords (from the parallel minor in major keys; from harmonic and melodic minor in minor keys).
+- **Charts the chord progression** over time and picks out the loops that repeat, such as I – V – vi – IV.
+- **Shows guitar voicings**: every playable shape of the selected chord across the neck in standard tuning.
+- **Shows scales and dyads**: the scale on the chord's root (major, minor, pentatonic, blues, modes and more), and two-note shapes on a chosen pair of strings.
+- **Saves the result** to a local library so you can reopen it without analysing again.
+
+Press **Load demo** to try it without a song. The demo is a G – D – Em – C loop made in the browser, and should come out as G major with the progression I – V – vi – IV.
+
+## How it works
+
+Everything below happens in the browser, in plain JavaScript with no libraries. Audio never leaves your computer, except for YouTube downloads, which go to the local server.
+
+1. **Decode.** The browser decodes the file, resamples it to 22,050 Hz, mixes it to mono and keeps the first 10 minutes.
+2. **Chromagram.** The audio is cut into overlapping frames of 8,192 samples (about 0.37 s), one every 4,096 samples (about 0.19 s). Each frame is windowed and run through an FFT. Frequencies from 55 Hz to 2.1 kHz are folded into the 12 pitch classes (C, C♯, D … B), which gives each frame a 12-value "chroma" showing how much of each note it contains.
+3. **Key.** The chroma of all frames is averaged into one 12-value profile for the whole song. That profile is correlated against the Krumhansl–Schmuckler key profiles, which describe how often each note tends to sound in a given key, rotated to all 12 major and 12 minor keys. The best match is the key. How strongly it matches, and how far ahead it is of the next key, set the confidence. A relative major/minor in second place gets flagged, since those two keys share all their notes.
+4. **Chords.** Each frame is matched against templates for the 24 major and minor triads, plus a "no chord" state for silence. Chords that belong to the detected key get a small bonus. A Viterbi pass then finds the most likely chord sequence, with a penalty for changing chord, so the chart doesn't flicker between frames. Blips shorter than about half a second are merged into their neighbours.
+5. **Loops.** The chord sequence is searched for repeated runs of 2 to 8 chords. Rotations of the same run count as one loop (G – D – Em – C is the same loop as D – Em – C – G). Loops are ranked by how much of the song they cover, and shorter loops that are only part of a bigger one are dropped.
+6. **Theory.** Chord names, Roman numerals, scales and voicings are worked out from the selected key each time it's shown, so changing the key re-labels everything at once. Notes are spelled by letter, so F♯ major gets E♯ rather than F.
+
+The method works best on songs with clear harmony, like pop, rock and folk. Chord detection only knows major and minor triads, so sevenths, suspended chords and power chords come out as the nearest triad. Heavy drums, distortion or key changes can throw it off.
+
+## Requirements
+
+- Node.js 18 or newer
+- yt-dlp, for YouTube links only
+- A Spotify developer app, for the Spotify import only
 
 ## Run it locally
 
@@ -41,8 +73,8 @@ Every file or YouTube link you analyse is saved automatically to `songs.db`, a S
 - **What's stored:** the title, the key and its score, the 12 note strengths, the chord chart and the repeating progressions. Audio is never stored.
 - **Duplicates:** a song is identified by its YouTube video ID, or by a SHA-256 hash of the file's contents. Analysing the same song again updates its entry instead of adding a new one.
 - **Location:** set `DB_PATH=/path/to/file.db` to keep the database somewhere else. `songs.db` is ignored by Git, so your listening history isn't pushed.
-- **Backup:** stop the server and copy `songs.db`.
-- **Schema changes:** add a numbered file to `migrations/` (for example `002_add_bpm.sql`). The server applies any new ones on start-up.
+- **Backup:** stop the server and copy `songs.db`, plus `songs.db-wal` and `songs.db-shm` if they're there. Recent changes may still be in those files.
+- **Schema changes:** add a numbered file to `migrations/` (for example `003_add_bpm.sql`). The server applies any new ones on start-up.
 - **Changing the analysis:** bump `ANALYSIS_VERSION` in `key-finder.html` whenever a change would give different results. Saved results record which version produced them.
 
 If `npm install` hasn't been run, the app still works, just without saving.
@@ -88,7 +120,7 @@ The server only accepts requests from its own pages: other hosts and other websi
 
 - `key-finder.html`: the whole app (page, audio analysis, music theory), served at `/`. The same file is published as a claude.ai artifact, where the YouTube box, Saved songs and page links stay hidden.
 - `how-it-works.html`: a second page explaining the analysis, served at `/how-it-works`. Both pages share the top bar; its styles are copied in each file, so keep them in step.
-- `server.js`: serves the page and the YouTube and saved-songs endpoints.
+- `server.js`: serves both pages and the YouTube, saved-songs and Spotify endpoints.
 - `db.js`: the SQLite database and its queries.
 - `spotify.js`: Spotify login and playlist import.
 - `.env.example`: a template for `.env`, which holds your Spotify Client ID.
