@@ -25,3 +25,6 @@ node_modules/
 
 # macOS clutter
 .DS_Store
+
+# Personal Claude Code notes (CLAUDE.md is the shared version)
+CLAUDE.local.md
